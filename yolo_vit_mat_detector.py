@@ -6,14 +6,37 @@ from cv_bridge import CvBridge
 import cv2
 from ultralytics import YOLO
 from transformers import ViTForImageClassification, ViTImageProcessor
+from transformers import AutoImageProcessor, AutoModelForImageClassification
+
+# from ultralytics import RTDETR
+
+
+
+# # Use a pipeline as a high-level helper OR Load model directly (BELOW)
+# from transformers import pipeline
+
+# pipe = pipeline("image-classification", model="ioanasong/vit-MINC-2500")
+
+
+# Load model directly
+processor = AutoImageProcessor.from_pretrained("ioanasong/vit-MINC-2500")
+model = AutoModelForImageClassification.from_pretrained("ioanasong/vit-MINC-2500")
+
+
 
 class MaterialDetector:
     def __init__(self):
         self.bridge = CvBridge()
-        self.yolo_model = YOLO('yolov5s.pt')  
-        self.vit_model = ViTForImageClassification.from_pretrained('your_fine_tuned_model')
-        self.vit_processor = ViTImageProcessor.from_pretrained('your_fine_tuned_model')
-        
+        # self.yolo_model = YOLO('yolov10n.pt')  # "Suitable for extremely resource-constrained environments" for object-detection
+        self.yolo_model = YOLO('yolov10s.pt')  # "Balances speed and accuracy" for object-detection
+        # self.rtdetr_model = RTDETR("rtdetr-l.pt") # OT
+
+            # results = model("image.jpg")
+            # results[0].show()
+        # self.vit_model = ViTForImageClassification.from_pretrained('vit-MINC-2500')
+        self.vit_model = model
+        # self.vit_processor = ViTImageProcessor.from_pretrained('vit-MINC-2500')
+        self.vit_processor = processor
         self.image_sub = rospy.Subscriber('/camera/image_raw', Image, self.image_callback)
 
     def image_callback(self, msg):
