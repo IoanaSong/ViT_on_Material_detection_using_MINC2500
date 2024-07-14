@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 
 import rospy
+import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-import cv2
-from ultralytics import YOLO
+from Ultralytics import YOLO
 from transformers import ViTForImageClassification, ViTImageProcessor
 from transformers import AutoImageProcessor, AutoModelForImageClassification
+
+from vit_inference.msg import MaterialDetected
 
 # from ultralytics import RTDETR
 
@@ -24,7 +26,7 @@ model = AutoModelForImageClassification.from_pretrained("ioanasong/vit-MINC-2500
 
 
 
-class YoloViTMaterialDetector:
+class YoloVitMaterialDetector:
     def __init__(self):
         self.bridge = CvBridge()
         # self.yolo_model = YOLO('yolov10n.pt')  # "Suitable for extremely resource-constrained environments" for object-detection
@@ -38,6 +40,7 @@ class YoloViTMaterialDetector:
         # self.vit_processor = ViTImageProcessor.from_pretrained('vit-MINC-2500')
         self.vit_processor = processor
         self.image_sub = rospy.Subscriber('/camera/image_raw', Image, self.image_callback) # TODO check which subscriber is camera for '/camera/image_raw'
+        self.result_pub = rospy.Publisher('/vit_inference/results', MaterialDetected, queue_size=10)
 
     def image_callback(self, msg):
         try:
@@ -59,6 +62,20 @@ class YoloViTMaterialDetector:
                 inputs = self.vit_processor(images=crop, return_tensors="pt")
                 outputs = self.vit_model(**inputs)
                 predicted_class = outputs.logits.argmax(-1).item()
+                confidence = outputs.logits.softmax(-1).max().item()
+                
+                # Create and publish DetectionResult message
+                detection_msg = MaterialDetected()
+                detection_msg.header = msg.header
+                detection_msg.object_class = result.names[int(result.boxes.cls[0])]  # todo maybe: change to string
+                detection_msg.confidence = confidence
+                detection_msg.x = x1
+                detection_msg.y = y1
+                detection_msg.width = x2 - x1
+                detection_msg.height = y2 - y1
+                detection_msg.material = str(predicted_class)
+                
+                self.result_pub.publish(detection_msg)
                 
                 # Draw bounding box and label
                 cv2.rectangle(cv_image, (x1, y1), (x2, y2), (0, 255, 0), 2)
@@ -69,8 +86,8 @@ class YoloViTMaterialDetector:
         cv2.waitKey(1)
 
 if __name__ == '__main__':
-    rospy.init_node('material_detector', anonymous=True)
-    detector = YoloViTMaterialDetector()
+    rospy.init_node('yolo_vit_mat_detector', anonymous=True)  #may need changing to 'material_detector'
+    detector = YoloVitMaterialDetector()
     try:
         rospy.spin()
     except KeyboardInterrupt:
