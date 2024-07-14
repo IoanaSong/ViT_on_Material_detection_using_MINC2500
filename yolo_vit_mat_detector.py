@@ -24,12 +24,12 @@ model = AutoModelForImageClassification.from_pretrained("ioanasong/vit-MINC-2500
 
 
 
-class MaterialDetector:
+class YoloViTMaterialDetector:
     def __init__(self):
         self.bridge = CvBridge()
         # self.yolo_model = YOLO('yolov10n.pt')  # "Suitable for extremely resource-constrained environments" for object-detection
         self.yolo_model = YOLO('yolov10s.pt')  # "Balances speed and accuracy" for object-detection
-        # self.rtdetr_model = RTDETR("rtdetr-l.pt") # OT
+        # self.rtdetr_model = RTDETR("rtdetr-l.pt") # for OD
 
             # results = model("image.jpg")
             # results[0].show()
@@ -37,7 +37,7 @@ class MaterialDetector:
         self.vit_model = model
         # self.vit_processor = ViTImageProcessor.from_pretrained('vit-MINC-2500')
         self.vit_processor = processor
-        self.image_sub = rospy.Subscriber('/camera/image_raw', Image, self.image_callback)
+        self.image_sub = rospy.Subscriber('/camera/image_raw', Image, self.image_callback) # TODO check which subscriber is camera for '/camera/image_raw'
 
     def image_callback(self, msg):
         try:
@@ -70,7 +70,7 @@ class MaterialDetector:
 
 if __name__ == '__main__':
     rospy.init_node('material_detector', anonymous=True)
-    detector = MaterialDetector()
+    detector = YoloViTMaterialDetector()
     try:
         rospy.spin()
     except KeyboardInterrupt:
