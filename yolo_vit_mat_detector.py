@@ -4,11 +4,21 @@ import rospy
 import cv2
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
-from Ultralytics import YOLO
+from ultralytics import YOLO
 from transformers import ViTForImageClassification, ViTImageProcessor
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 
 from vit_inference.msg import MaterialDetected
+
+
+# TODO When running the first time 
+# pip install ultralytics
+# pip install transformers
+# pip install pillow
+    # pip install --upgrade pillow
+
+
+
 
 # from ultralytics import RTDETR
 
